@@ -1,0 +1,1 @@
+/home/halan/Área de trabalho/parasite_detector/build/app/intermediates/cxx/Debug/2f6oi2a5/obj/arm64-v8a
