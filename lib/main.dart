@@ -52,7 +52,10 @@ class _SplashScreenState extends State<SplashScreen> {
             SizedBox(height: 20),
             Text(
               'Detector de Parasitas',
-              style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -107,11 +110,11 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
       if (response.statusCode == 200) {
         setState(() {
           _detectionsCount =
-          Map<String, int>.from(response.data['detections_count']);
+              Map<String, int>.from(response.data['detections_count']);
           String imageHex = response.data['image'];
           Uint8List bytes = Uint8List.fromList(List<int>.generate(
               imageHex.length ~/ 2,
-                  (i) =>
+              (i) =>
                   int.parse(imageHex.substring(i * 2, i * 2 + 2), radix: 16)));
           _processedImage = 'data:image/jpeg;base64,' + base64Encode(bytes);
         });
@@ -132,7 +135,8 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
 
     final bytes = base64Decode(_processedImage!.split(',')[1]);
     final tempDir = await getTemporaryDirectory();
-    final file = await File('${tempDir.path}/processed_image.jpg').writeAsBytes(bytes);
+    final file =
+        await File('${tempDir.path}/processed_image.jpg').writeAsBytes(bytes);
 
     Share.shareXFiles([XFile(file.path)], text: 'Imagem processada!');
   }
@@ -182,11 +186,7 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
                 onPressed: _uploadImage,
                 child: Text('Enviar'),
               ),
-              if (_loading)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
+              if (_loading) CircularProgressIndicator(),
               if (_processedImage != null)
                 Column(
                   children: [
@@ -200,6 +200,22 @@ class _ImageUploadScreenState extends State<ImageUploadScreen> {
                       label: Text('Compartilhar'),
                       onPressed: _shareImage,
                     ),
+                    if (_detectionsCount.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 20),
+                          Text('Ovos Detectados:',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          ..._detectionsCount.entries.map((entry) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Text('${entry.key}: ${entry.value}',
+                                    style: TextStyle(fontSize: 16)),
+                              )),
+                        ],
+                      ),
                   ],
                 ),
             ],
