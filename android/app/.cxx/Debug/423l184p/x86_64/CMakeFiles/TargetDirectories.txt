@@ -1,0 +1,2 @@
+/home/halan/Área de trabalho/parasite_detector/android/app/.cxx/Debug/423l184p/x86_64/CMakeFiles/edit_cache.dir
+/home/halan/Área de trabalho/parasite_detector/android/app/.cxx/Debug/423l184p/x86_64/CMakeFiles/rebuild_cache.dir
