@@ -192,6 +192,36 @@ class _UploadScreenState extends State<UploadScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Card(
+              color: Colors.yellow[100],
+              elevation: 2,
+              margin: EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Nota:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(height: 4),
+                    Text(
+                      'Modelos maiores (como yolov11x) oferecem melhores resultados, mas também exigem mais tempo de processamento e mais recursos computacionais. Para vídeos, apenas o modelo yolov11n está disponível.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    SizedBox(height: 8),
+                    Text('Aviso:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(height: 4),
+                    Text(
+                      'Esta aplicação pode cometer erros e não substitui o diagnóstico de um profissional capacitado.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -294,6 +324,36 @@ class _UploadScreenState extends State<UploadScreen> {
                     ),
                 ],
               ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Desenvolvido por Halan Germano Bacca - PPGINFOS - UFSC - 2025',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _abrirUrl('https://github.com/halangbacca'),
+                  icon: Icon(Icons.code),
+                  label: Text('GitHub'),
+                ),
+                TextButton.icon(
+                  onPressed: () =>
+                      _abrirUrl('https://www.linkedin.com/in/halanbacca'),
+                  icon: Icon(Icons.business),
+                  label: Text('LinkedIn'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
