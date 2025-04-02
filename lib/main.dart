@@ -15,6 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.system,
       home: SplashScreen(),
     );
   }
@@ -50,9 +53,10 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'Detector de Parasitas',
               style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold),
+                fontSize: 20,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -76,21 +80,18 @@ class _UploadScreenState extends State<UploadScreen> {
   Map<String, int> _detectionsCount = {};
   String? _csvUrl;
   String? _pdfUrl;
-  String _selectedModel = 'yolov11n';
+  String _selectedModel = 'YOLO11n';
   final List<String> _modelOptions = [
-    'yolov11n',
-    'yolov11s',
-    'yolov11m',
-    'yolov11l',
-    'yolov11x'
+    'YOLO11n',
+    'YOLO11s',
+    'YOLO11m',
+    'YOLO11l',
+    'YOLO11x'
   ];
   WebSocketChannel? _channel;
   final String backendIp = '192.168.1.101';
 
-  String fixUrl(String? url) {
-    if (url == null) return '';
-    return url.replaceAll("localhost", backendIp);
-  }
+  String fixUrl(String? url) => url?.replaceAll("localhost", backendIp) ?? '';
 
   Future<void> _pickMedia(bool isVideo) async {
     final picked = isVideo
@@ -100,7 +101,7 @@ class _UploadScreenState extends State<UploadScreen> {
       setState(() {
         _file = File(picked.path);
         _isVideo = isVideo;
-        _selectedModel = 'yolov11n';
+        _selectedModel = 'YOLO11n';
         _processedUrl = null;
         _detectionsCount.clear();
         _csvUrl = null;
@@ -169,7 +170,6 @@ class _UploadScreenState extends State<UploadScreen> {
     if (!await launchUrl(
       uri,
       mode: LaunchMode.inAppBrowserView,
-      webViewConfiguration: const WebViewConfiguration(enableJavaScript: true),
     )) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Não foi possível abrir o link: $url')),
@@ -186,176 +186,212 @@ class _UploadScreenState extends State<UploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Detector de Parasitas')),
+      appBar: AppBar(title: Text('Detector de Parasitas'), centerTitle: true),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Card(
-              color: Colors.yellow[100],
-              elevation: 2,
-              margin: EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Nota:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 4),
-                    Text(
-                      'Modelos maiores (como yolov11x) oferecem melhores resultados, mas também exigem mais tempo de processamento e mais recursos computacionais. Para vídeos, apenas o modelo yolov11n está disponível.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    SizedBox(height: 8),
-                    Text('Aviso:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 4),
-                    Text(
-                      'Esta aplicação pode cometer erros e não substitui o diagnóstico de um profissional capacitado.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  ],
-                ),
+            _buildInfoCard(),
+            SizedBox(height: 12),
+            _buildUploadButtons(),
+            if (_file != null) ...[
+              SizedBox(height: 10),
+              Text(
+                'Selecionado: ${_file!.path.split("/").last}',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  icon: Icon(Icons.image),
-                  label: Text('Imagem'),
-                  onPressed: () => _pickMedia(false),
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.videocam),
-                  label: Text('Vídeo'),
-                  onPressed: () => _pickMedia(true),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            _file != null
-                ? Text('Arquivo selecionado: ${_file!.path.split("/").last}')
-                : Container(),
-            SizedBox(height: 10),
-            DropdownButton<String>(
-              value: _selectedModel,
-              items: _modelOptions.map((String model) {
-                return DropdownMenuItem<String>(
-                  value: model,
-                  child: Text(model),
-                  enabled: _isVideo ? model == 'yolov11n' : true,
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() => _selectedModel = newValue!);
-              },
-            ),
-            Text('Confiança mínima: ${_threshold.toStringAsFixed(2)}'),
-            Slider(
-              value: _threshold,
-              min: 0,
-              max: 1,
-              divisions: 100,
-              label: _threshold.toStringAsFixed(2),
-              onChanged: (value) => setState(() => _threshold = value),
-            ),
-            ElevatedButton(
-              onPressed: _uploadFile,
-              child: Text('Enviar'),
-            ),
-            if (_loading) ...[
-              SizedBox(height: 20),
-              Text(_isVideo ? 'Processando vídeo...' : 'Processando imagem...'),
+              SizedBox(height: 8),
+              _buildModelDropdown(),
+              _buildConfidenceSlider(),
               SizedBox(height: 10),
-              LinearProgressIndicator(value: _progress / 100),
-              SizedBox(height: 10),
-              Text('$_progress%')
+              ElevatedButton.icon(
+                icon: Icon(Icons.cloud_upload),
+                label: Text('Enviar'),
+                onPressed: _uploadFile,
+              ),
             ],
-            if (_processedUrl != null)
-              Column(
-                children: [
-                  SizedBox(height: 20),
-                  Text('Arquivo Processado:'),
-                  _isVideo
-                      ? ElevatedButton.icon(
-                          icon: Icon(Icons.play_circle_outline),
-                          label: Text('Assistir vídeo'),
-                          onPressed: () => _abrirUrl(_processedUrl!),
-                        )
-                      : Image.network(_processedUrl!, height: 200),
-                ],
-              ),
-            if (_detectionsCount.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 20),
-                  Text('Ovos Detectados:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ..._detectionsCount.entries.map((entry) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text('${entry.key}: ${entry.value}',
-                            style: TextStyle(fontSize: 16)),
-                      )),
-                ],
-              ),
-            if (_csvUrl != null || _pdfUrl != null)
-              Column(
-                children: [
-                  SizedBox(height: 20),
-                  Text('Relatórios:'),
-                  if (_csvUrl != null)
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.table_chart),
-                      label: Text('Baixar CSV'),
-                      onPressed: () => _abrirUrl(_csvUrl!),
-                    ),
-                  if (_pdfUrl != null)
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.picture_as_pdf),
-                      label: Text('Baixar PDF'),
-                      onPressed: () => _abrirUrl(_pdfUrl!),
-                    ),
-                ],
-              ),
+            if (_loading) _buildProgressSection(),
+            if (_processedUrl != null) _buildResultSection(),
+            if (_detectionsCount.isNotEmpty) _buildDetectionsList(),
+            if (_csvUrl != null || _pdfUrl != null) _buildReportsButtons(),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(12.0),
+      bottomNavigationBar: _buildFooter(),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('🧠 Nota:', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
             Text(
-              'Desenvolvido por Halan Germano Bacca - PPGINFOS - UFSC - 2025',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              'Modelos maiores oferecem mais precisão, mas exigem mais recursos. Para vídeos, somente YOLO11n está disponível.',
             ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _abrirUrl('https://github.com/halangbacca'),
-                  icon: Icon(Icons.code),
-                  label: Text('GitHub'),
-                ),
-                TextButton.icon(
-                  onPressed: () =>
-                      _abrirUrl('https://www.linkedin.com/in/halanbacca'),
-                  icon: Icon(Icons.business),
-                  label: Text('LinkedIn'),
-                ),
-              ],
-            ),
+            Divider(),
+            Text('⚠️ Aviso:', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text(
+                'Este app pode cometer erros e não substitui o diagnóstico de um profissional laboratorial.'),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUploadButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton.icon(
+          icon: Icon(Icons.image),
+          label: Text('Imagem'),
+          onPressed: () => _pickMedia(false),
+        ),
+        ElevatedButton.icon(
+          icon: Icon(Icons.videocam),
+          label: Text('Vídeo'),
+          onPressed: () => _pickMedia(true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModelDropdown() {
+    return DropdownButton<String>(
+      value: _selectedModel,
+      isExpanded: true,
+      items: _modelOptions.map((String model) {
+        return DropdownMenuItem<String>(
+          value: model,
+          child: Text(model),
+          enabled: _isVideo ? model == 'YOLO11n' : true,
+        );
+      }).toList(),
+      onChanged: (String? newValue) =>
+          setState(() => _selectedModel = newValue!),
+    );
+  }
+
+  Widget _buildConfidenceSlider() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Confiança mínima: ${_threshold.toStringAsFixed(2)}'),
+        Slider(
+          value: _threshold,
+          min: 0,
+          max: 1,
+          divisions: 100,
+          label: _threshold.toStringAsFixed(2),
+          onChanged: (value) => setState(() => _threshold = value),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressSection() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        Text(_isVideo ? 'Processando vídeo...' : 'Processando imagem...'),
+        SizedBox(height: 10),
+        LinearProgressIndicator(value: _progress / 100),
+        SizedBox(height: 10),
+        Text('$_progress%'),
+      ],
+    );
+  }
+
+  Widget _buildResultSection() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        Text('Arquivo Processado:'),
+        _isVideo
+            ? ElevatedButton.icon(
+                icon: Icon(Icons.play_circle_outline),
+                label: Text('Assistir vídeo'),
+                onPressed: () => _abrirUrl(_processedUrl!),
+              )
+            : Image.network(_processedUrl!, height: 200),
+      ],
+    );
+  }
+
+  Widget _buildDetectionsList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 20),
+        Text('Ovos Detectados:',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ..._detectionsCount.entries.map((entry) => ListTile(
+              leading: Icon(Icons.bug_report),
+              title: Text(entry.key),
+              trailing: Text(entry.value.toString()),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildReportsButtons() {
+    return Column(
+      children: [
+        SizedBox(height: 20),
+        Text('Relatórios:'),
+        if (_csvUrl != null)
+          ElevatedButton.icon(
+            icon: Icon(Icons.table_chart),
+            label: Text('Baixar CSV'),
+            onPressed: () => _abrirUrl(_csvUrl!),
+          ),
+        if (_pdfUrl != null)
+          ElevatedButton.icon(
+            icon: Icon(Icons.picture_as_pdf),
+            label: Text('Baixar PDF'),
+            onPressed: () => _abrirUrl(_pdfUrl!),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Desenvolvido por Halan Germano Bacca - PPGINFOS - UFSC - 2025',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: () => _abrirUrl('https://github.com/halangbacca'),
+                icon: Icon(Icons.code),
+                label: Text('GitHub'),
+              ),
+              TextButton.icon(
+                onPressed: () =>
+                    _abrirUrl('https://www.linkedin.com/in/halanbacca'),
+                icon: Icon(Icons.business),
+                label: Text('LinkedIn'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
