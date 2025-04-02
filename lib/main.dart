@@ -167,10 +167,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Future<void> _abrirUrl(String url) async {
     final uri = Uri.parse(url);
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.inAppBrowserView,
-    )) {
+    if (!await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Não foi possível abrir o link: $url')),
       );
@@ -202,6 +199,7 @@ class _UploadScreenState extends State<UploadScreen> {
               ),
               SizedBox(height: 8),
               _buildModelDropdown(),
+              SizedBox(height: 8),
               _buildConfidenceSlider(),
               SizedBox(height: 10),
               ElevatedButton.icon(
@@ -265,18 +263,31 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Widget _buildModelDropdown() {
-    return DropdownButton<String>(
-      value: _selectedModel,
-      isExpanded: true,
-      items: _modelOptions.map((String model) {
-        return DropdownMenuItem<String>(
-          value: model,
-          child: Text(model),
-          enabled: _isVideo ? model == 'YOLO11n' : true,
-        );
-      }).toList(),
-      onChanged: (String? newValue) =>
-          setState(() => _selectedModel = newValue!),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Modelo YOLOv11:'),
+        DropdownButton<String>(
+          value: _selectedModel,
+          isExpanded: true,
+          items: _modelOptions.map((String model) {
+            final isEnabled = !_isVideo || model == 'YOLO11n';
+            return DropdownMenuItem<String>(
+              value: model,
+              enabled: isEnabled,
+              child: Text(
+                model + (isEnabled ? '' : ' (indisponível para vídeo)'),
+                style: TextStyle(
+                  color: isEnabled ? null : Colors.grey,
+                  fontStyle: isEnabled ? FontStyle.normal : FontStyle.italic,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) =>
+              setState(() => _selectedModel = newValue!),
+        ),
+      ],
     );
   }
 
@@ -321,7 +332,23 @@ class _UploadScreenState extends State<UploadScreen> {
                 label: Text('Assistir vídeo'),
                 onPressed: () => _abrirUrl(_processedUrl!),
               )
-            : Image.network(_processedUrl!, height: 200),
+            : GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    child: InteractiveViewer(
+                      child: Image.network(_processedUrl!),
+                    ),
+                  ),
+                ),
+                child: Image.network(_processedUrl!, height: 200),
+              ),
+        SizedBox(height: 10),
+        ElevatedButton.icon(
+          icon: Icon(Icons.download),
+          label: Text('Baixar arquivo processado'),
+          onPressed: () => _abrirUrl(_processedUrl!),
+        ),
       ],
     );
   }

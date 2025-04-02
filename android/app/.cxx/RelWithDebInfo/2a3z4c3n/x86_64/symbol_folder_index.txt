@@ -1,0 +1,1 @@
+/home/halan/Área de trabalho/parasite-detector-mobile/build/app/intermediates/cxx/RelWithDebInfo/2a3z4c3n/obj/x86_64
